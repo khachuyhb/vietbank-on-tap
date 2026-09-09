@@ -4,3 +4,15 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Tài liệu và công cụ nội bộ, không đưa lên repository website công khai.
+/AGENTS.md
+/CHECK-DATA.cmd
+/HANDOFF.md
+/PROJECT-STATUS.md
+/README.md
+/SHA256SUMS.txt
+/package.json
+/references/
+/scripts/
+/tests/
+/verify-handoff.ps1
