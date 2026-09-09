@@ -971,12 +971,12 @@ body[data-view="results"] .review-exam-list .answer-option {
   }
 }
 
-/* Kết quả của chế độ làm hết rồi nộp giữ đúng mẫu thẻ đáp án đã duyệt. */
-body[data-view="results"] .results-submit .review-exam-list .question-content {
+/* Mọi chế độ xem lại kết quả dùng cùng mẫu thẻ đáp án đã duyệt. */
+body[data-view="results"] .review-exam-list .question-content {
   padding: 24px 10px 38px 0;
 }
 
-body[data-view="results"] .results-submit .review-exam-list .question-type {
+body[data-view="results"] .review-exam-list .question-type {
   display: inline-flex;
   min-height: 30px;
   align-items: center;
@@ -990,14 +990,14 @@ body[data-view="results"] .results-submit .review-exam-list .question-type {
   text-transform: uppercase;
 }
 
-body[data-view="results"] .results-submit .review-exam-list .question-hint {
+body[data-view="results"] .review-exam-list .question-hint {
   display: block;
   margin: 9px 0 0;
   color: #70808d;
   font-size: 0.86rem;
 }
 
-body[data-view="results"] .results-submit .review-exam-list .question-text {
+body[data-view="results"] .review-exam-list .question-text {
   margin: 17px 0 0;
   color: #082a49;
   font-size: clamp(1.15rem, 2vw, 1.48rem);
@@ -1006,12 +1006,12 @@ body[data-view="results"] .results-submit .review-exam-list .question-text {
   letter-spacing: -0.02em;
 }
 
-body[data-view="results"] .results-submit .review-exam-list .answer-list.is-reviewed {
+body[data-view="results"] .review-exam-list .answer-list.is-reviewed {
   gap: 12px;
   margin-top: 27px;
 }
 
-body[data-view="results"] .results-submit .review-exam-list .answer-option {
+body[data-view="results"] .review-exam-list .answer-option {
   min-height: 66px;
   padding: 11px 15px;
   border-radius: 15px;
