@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Ôn tập 563 câu nghiệp vụ Vietbank ngay trên trình duyệt."
+    />
+    <title>Vietbank Ôn tập</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-view="start">
+    <div class="page-shell">
+      <header class="brand-bar">
+        <a class="brand" href="./" aria-label="Vietbank Ôn tập - Trang bắt đầu">
+          <span class="brand-mark" aria-hidden="true">V</span>
+          <span>
+            <strong>VIETBANK</strong>
+            <small>Ôn tập nghiệp vụ</small>
+          </span>
+        </a>
+        <span class="question-total">563 câu hỏi</span>
+      </header>
+
+      <main id="app" class="app-shell" tabindex="-1">
+        <section class="start-screen" aria-labelledby="start-title">
+          <div class="start-intro">
+            <p class="eyebrow">Bộ câu hỏi nghiệp vụ</p>
+            <h1 id="start-title">Chọn cách bạn muốn ôn tập</h1>
+            <p>
+              Làm một lượt ngắn để ghi nhớ nhanh, hoặc chọn toàn bộ câu hỏi để
+              kiểm tra kiến thức.
+            </p>
+          </div>
+
+          <form class="setup-card" id="setup-form">
+            <fieldset class="mode-grid">
+              <legend>Chế độ làm bài</legend>
+              <label class="choice-card is-selected">
+                <input type="radio" name="mode" value="submit" checked />
+                <span class="choice-icon" aria-hidden="true">✓</span>
+                <span>
+                  <strong>Làm hết rồi nộp</strong>
+                  <small>Thoải mái xem lại và sửa đáp án trước khi chấm điểm.</small>
+                </span>
+              </label>
+              <label class="choice-card">
+                <input type="radio" name="mode" value="instant" />
+                <span class="choice-icon" aria-hidden="true">⚡</span>
+                <span>
+                  <strong>Biết kết quả ngay</strong>
+                  <small>Nhận phản hồi sau từng câu và ghi nhớ ngay tại chỗ.</small>
+                </span>
+              </label>
+            </fieldset>
+
+            <div class="setup-row">
+              <fieldset>
+                <legend>Số câu</legend>
+                <div class="segment-control">
+                  <label><input type="radio" name="count" value="20" /><span>20</span></label>
+                  <label><input type="radio" name="count" value="50" checked /><span>50</span></label>
+                  <label><input type="radio" name="count" value="100" /><span>100</span></label>
+                  <label><input type="radio" name="count" value="all" /><span>Tất cả</span></label>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Thứ tự</legend>
+                <div class="inline-options">
+                  <label><input type="radio" name="order" value="random" checked /> Ngẫu nhiên</label>
+                  <label><input type="radio" name="order" value="original" /> Thứ tự gốc</label>
+                </div>
+              </fieldset>
+            </div>
+
+            <button class="primary-button start-button" type="submit">
+              Bắt đầu ôn tập <span aria-hidden="true">→</span>
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
