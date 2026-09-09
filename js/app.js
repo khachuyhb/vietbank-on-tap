@@ -50,6 +50,7 @@ function stopScrollTracking() {
 function renderStart() {
   stopScrollTracking();
   document.body.dataset.view = "start";
+  delete document.body.dataset.resultMode;
   const resumable = session && session.questionNumbers?.length;
   const answered = resumable
     ? session.questionNumbers.filter((number) => isAnswered(session.answers[String(number)])).length
@@ -134,6 +135,90 @@ function statusLabel(status) {
   return null;
 }
 
+function navigatorStatus(number, resultMap = null) {
+  if (resultMap) return resultMap.get(number)?.status ?? "blank";
+  const key = String(number);
+  if (Object.hasOwn(session.checked, key)) return session.checked[key] ? "correct" : "wrong";
+  return isAnswered(answerFor(number)) ? "answered" : "blank";
+}
+
+function navigatorLabel(position, status, current) {
+  const statusText = {
+    answered: "đã trả lời",
+    correct: "đúng",
+    wrong: "sai",
+    blank: "chưa trả lời",
+  }[status];
+  return `Câu ${position + 1}, ${statusText}${current ? ", đang xem" : ""}`;
+}
+
+function renderQuestionNavigator(results = null) {
+  const resultMap = results ? new Map(results.detail.map((item) => [item.number, item])) : null;
+  const numbers = session.questionNumbers.map((number, position) => {
+    const status = navigatorStatus(number, resultMap);
+    const current = position === session.currentIndex;
+    return `<button class="nav-number is-${status}${current ? " is-current" : ""}" type="button" data-action="jump" data-number="${number}" data-position="${position}" aria-label="${navigatorLabel(position, status, current)}" ${current ? 'aria-current="true"' : ""}>${position + 1}</button>`;
+  }).join("");
+  const answered = results ? results.total - results.blank : answeredCount();
+  const legend = results
+    ? '<span><i class="legend-dot correct">✓</i> Đúng</span><span><i class="legend-dot wrong">×</i> Sai</span><span><i class="legend-dot blank"></i> Bỏ trống</span><span><i class="legend-dot current"></i> Đang xem</span>'
+    : '<span><i class="legend-dot answered"></i> Đã trả lời</span><span><i class="legend-dot blank"></i> Chưa trả lời</span><span><i class="legend-dot current"></i> Đang xem</span>';
+
+  return `<aside class="question-nav" aria-label="Danh sách câu hỏi">
+    <div class="question-nav-inner">
+      <div class="nav-heading"><h2>Danh sách câu hỏi</h2><button class="nav-close mobile-only" type="button" data-action="nav-close" aria-label="Đóng danh sách câu hỏi">×</button></div>
+      <div class="nav-number-scroll"><div class="number-grid">${numbers}</div></div>
+      <div class="nav-legend">${legend}</div>
+      <div class="nav-summary" data-nav-summary>${results ? `Số câu chấm tự động: <strong>${results.total}/${results.total}</strong> câu` : `Đã trả lời: <strong>${answered}/${session.questionNumbers.length}</strong> câu`}</div>
+      ${results ? `<div class="nav-score"><span>Tổng số điểm</span><strong>${results.score.toFixed(2)}/100</strong></div><button class="primary-button nav-finish" type="button" data-action="discard">Kết thúc xem</button>` : `<button class="primary-button nav-finish" type="button" data-action="finish">${session.mode === "instant" ? "Kết thúc" : "Nộp bài"}</button>`}
+    </div>
+  </aside>`;
+}
+
+function renderNavBackdrop() {
+  return '<button class="nav-backdrop" type="button" data-action="nav-close" aria-label="Đóng danh sách câu hỏi"></button>';
+}
+
+function updateNavigatorState() {
+  const nav = document.querySelector(".question-nav");
+  if (!nav || !session) return;
+  const results = session.status === "completed" ? calculateResults(session, questionMap) : null;
+  const resultMap = results ? new Map(results.detail.map((item) => [item.number, item])) : null;
+  nav.querySelectorAll("[data-position]").forEach((button) => {
+    const position = Number(button.dataset.position);
+    const number = Number(button.dataset.number);
+    const status = navigatorStatus(number, resultMap);
+    const current = position === session.currentIndex;
+    button.className = `nav-number is-${status}${current ? " is-current" : ""}`;
+    button.setAttribute("aria-label", navigatorLabel(position, status, current));
+    if (current) button.setAttribute("aria-current", "true");
+    else button.removeAttribute("aria-current");
+  });
+  const summary = nav.querySelector("[data-nav-summary]");
+  if (summary && !results) summary.innerHTML = `Đã trả lời: <strong>${answeredCount()}/${session.questionNumbers.length}</strong> câu`;
+}
+
+function closeQuestionNavigator() {
+  document.querySelector(".question-nav")?.classList.remove("is-open");
+  document.querySelector(".nav-backdrop")?.classList.remove("is-open");
+}
+
+function jumpToQuestion(number) {
+  const position = session.questionNumbers.indexOf(number);
+  if (position < 0) return;
+  session.currentIndex = position;
+  saveSession(session);
+  if (document.body.dataset.view === "results" && !document.querySelector(`#question-${number}`)) {
+    resultFilter = "all";
+    renderResults();
+  }
+  requestAnimationFrame(() => {
+    document.querySelector(`#question-${number}`)?.scrollIntoView({ block: "start", behavior: "auto" });
+    updateNavigatorState();
+  });
+  closeQuestionNavigator();
+}
+
 function renderOption(question, option, { reviewed, locked }) {
   const answer = answerFor(question.number);
   const selected = answer.includes(option.id);
@@ -200,7 +285,10 @@ function renderExamHeader() {
   return `<header class="exam-toolbar">
     <div class="exam-toolbar-main">
       <p class="exam-title">Bài ôn tập: <strong>${modeLabel(session.mode)} · ${session.questionNumbers.length} câu</strong></p>
-      <button class="primary-button exam-submit-button" type="button" data-action="finish">${session.mode === "instant" ? "Kết thúc" : "Nộp bài"}</button>
+      <div class="exam-toolbar-actions">
+        <button class="secondary-button mobile-nav-toggle mobile-only" type="button" data-action="nav-toggle">Danh sách câu</button>
+        <button class="primary-button exam-submit-button" type="button" data-action="finish">${session.mode === "instant" ? "Kết thúc" : "Nộp bài"}</button>
+      </div>
     </div>
     <div class="exam-progress-row" aria-live="polite">
       <span data-progress-label>${answered}/${session.questionNumbers.length} câu đã trả lời${session.mode === "instant" ? ` · ${checkedCount()} đã kiểm tra` : ""}</span>
@@ -241,7 +329,7 @@ function renderFinishDialog() {
 function installScrollTracking() {
   stopScrollTracking();
   scrollListener = () => {
-    if (scrollFrame || !session || session.status !== "active") return;
+    if (scrollFrame || !session) return;
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = null;
       const blocks = [...document.querySelectorAll(".question-block")];
@@ -256,6 +344,7 @@ function installScrollTracking() {
       }
       const currentLabel = document.querySelector("[data-current-question]");
       if (currentLabel) currentLabel.textContent = String(visibleIndex + 1);
+      updateNavigatorState();
     });
   };
   window.addEventListener("scroll", scrollListener, { passive: true });
@@ -264,15 +353,18 @@ function installScrollTracking() {
 function renderQuiz({ restorePosition = false } = {}) {
   if (session.status === "completed") return renderResults();
   document.body.dataset.view = "exam";
+  delete document.body.dataset.resultMode;
   const blocks = session.questionNumbers
     .map((number, index) => renderQuestionBlock(questionMap.get(number), index))
     .join("");
   app.className = "exam-app-shell";
   app.innerHTML = `<section class="exam-screen" aria-label="Bài ôn tập">
     ${renderExamHeader()}
-    <main class="exam-list">${blocks}</main>
-    ${renderFinishPanel()}
-  </section>${renderExamFooter()}${renderFinishDialog()}`;
+    <div class="exam-workspace">
+      <div class="exam-main-column"><main class="exam-list">${blocks}</main>${renderFinishPanel()}</div>
+      ${renderQuestionNavigator()}
+    </div>
+  </section>${renderExamFooter()}${renderNavBackdrop()}${renderFinishDialog()}`;
   installScrollTracking();
   if (restorePosition && session.currentIndex > 0) {
     requestAnimationFrame(() => {
@@ -285,6 +377,7 @@ function renderQuiz({ restorePosition = false } = {}) {
 function renderResults() {
   stopScrollTracking();
   document.body.dataset.view = "results";
+  document.body.dataset.resultMode = session.mode;
   const results = calculateResults(session, questionMap);
   const filtered = resultFilter === "all"
     ? results.detail
@@ -303,6 +396,30 @@ function renderResults() {
     .join("");
 
   app.className = "results-app-shell";
+  if (session.mode === "submit") {
+    app.innerHTML = `<section class="results-screen results-submit cls-review-results" aria-labelledby="results-title">
+      <h1 class="visually-hidden" id="results-title">Kết quả bài thi ${results.score.toFixed(2)} trên 100 điểm</h1>
+      <div class="cls-review-layout">
+        <main class="cls-review-main">
+          <header class="cls-review-topbar">
+            <button class="text-button" type="button" data-action="discard"><span aria-hidden="true">←</span> Lượt ôn mới</button>
+            <p>Kết quả bài thi: <strong>${results.correct}/${results.total} câu đúng</strong></p>
+            <button class="secondary-button mobile-nav-toggle mobile-only" type="button" data-action="nav-toggle">Danh sách câu</button>
+          </header>
+          <div class="cls-filter-row">
+            <div class="filter-tabs" role="group" aria-label="Lọc kết quả">
+              ${Object.entries(labels).map(([key, label]) => `<button type="button" data-action="filter" data-filter="${key}" class="${resultFilter === key ? "is-active" : ""}" aria-pressed="${resultFilter === key}">${label}</button>`).join("")}
+            </div>
+          </div>
+          <div class="exam-list review-exam-list">${blocks || '<div class="empty-state">Không có câu nào trong nhóm này.</div>'}</div>
+        </main>
+        ${renderQuestionNavigator(results)}
+      </div>
+      ${renderNavBackdrop()}
+    </section>`;
+    installScrollTracking();
+    return;
+  }
   app.innerHTML = `<section class="results-screen results-${session.mode}" aria-labelledby="results-title">
     <div class="results-topbar">
       <button class="text-button" type="button" data-action="discard"><span aria-hidden="true">←</span> Lượt ôn mới</button>
@@ -344,6 +461,7 @@ function updateProgress() {
   const progress = document.querySelector("[data-answer-progress]");
   if (label) label.textContent = `${answered}/${session.questionNumbers.length} câu đã trả lời${session.mode === "instant" ? ` · ${checkedCount()} đã kiểm tra` : ""}`;
   if (progress) progress.value = answered;
+  updateNavigatorState();
 }
 
 function replaceQuestionBlock(number) {
@@ -484,7 +602,16 @@ app.addEventListener("click", (event) => {
   if (!button) return;
   const action = button.dataset.action;
 
-  if (action === "resume") {
+  if (action === "jump") {
+    jumpToQuestion(Number(button.dataset.number));
+  } else if (action === "nav-toggle") {
+    document.querySelector(".question-nav")?.classList.add("is-open");
+    document.querySelector(".nav-backdrop")?.classList.add("is-open");
+    document.querySelector(".question-nav .nav-number.is-current")?.focus();
+  } else if (action === "nav-close") {
+    closeQuestionNavigator();
+    document.querySelector("[data-action='nav-toggle']")?.focus();
+  } else if (action === "resume") {
     session.status === "completed" ? renderResults() : renderQuiz({ restorePosition: true });
     app.focus();
   } else if (action === "discard") {
@@ -511,6 +638,13 @@ app.addEventListener("click", (event) => {
   } else if (action === "retry") {
     const results = calculateResults(session, questionMap);
     startSessionFromNumbers(results.detail.filter((item) => item.status === button.dataset.kind).map((item) => item.number));
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && document.querySelector(".question-nav.is-open")) {
+    closeQuestionNavigator();
+    document.querySelector("[data-action='nav-toggle']")?.focus();
   }
 });
 
